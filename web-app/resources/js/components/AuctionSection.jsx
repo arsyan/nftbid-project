@@ -142,8 +142,8 @@ class AuctionSection extends Component {
                   </div>
 
                   <button
-                    onClick={() => ethValue.gt(this.minBid()) ? this.bid() : console.log('Low Bid')}
-                    className={"flex w-1/5 ml-3 text-white border-0 py-2 focus:outline-none rounded" + (ethValue.gt(this.minBid()) ? ' bg-red-500 hover:bg-red-600' : ' bg-gray-500')}>
+                    onClick={() => ethValue.gte(this.minBid()) ? this.bid() : console.log('Low Bid')}
+                    className={"flex w-1/5 ml-3 text-white border-0 py-2 focus:outline-none rounded" + (ethValue.gte(this.minBid()) ? ' bg-red-500 hover:bg-red-600' : ' bg-gray-500')}>
                     <div className="mx-auto">Bid</div>
                   </button>
                 </div>

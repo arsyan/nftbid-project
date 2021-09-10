@@ -17,7 +17,8 @@ class App extends Component {
       auction: null,
       nft: null,
       minBidIncrementPercentage: 0,
-      lastBids: []
+      lastBids: [],
+      events: []
     }
     this.loadContracts = this.loadContracts.bind(this);
     this.loadCurrentAuction = this.loadCurrentAuction.bind(this);
@@ -70,13 +71,15 @@ class App extends Component {
         auction.endTime = endTime;
         this.setState({ auction });
       });
-      auctionContract.events.AuctionBid({}).on('data', async ({ returnValues: { auctionId, bidder, value } }) => {
-        const { auction, lastBids } = this.state;
+      auctionContract.events.AuctionBid({}).on('data', async ({ returnValues: { auctionId, bidder, value }, transactionHash }) => {
+        const { auction, lastBids, events } = this.state;
+        if (events.includes(transactionHash)) return;
+        let updatedEvents = [transactionHash].concat(events);
         let newLastBids = [{ address: bidder, amount: value }].concat(lastBids);
         auction.currentBidder = bidder;
         auction.currentBid = value;
         console.log(newLastBids)
-        this.setState({ auction, lastBids: newLastBids });
+        this.setState({ auction, lastBids: newLastBids, events: updatedEvents });
       });
       const minBidIncrementPercentage = parseInt(await auctionContract.methods.minBidIncrementPercentage().call());
       this.setState({ minBidIncrementPercentage });
