@@ -8,9 +8,19 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract TestNFTToken is ERC721, Ownable {
     using Counters for Counters.Counter;
 
+    string private baseURL;
+
     Counters.Counter private _tokenIdCounter;
 
     constructor() ERC721("Test NFT Token", "TNT") {}
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURL;
+    }
+
+    function setBaseURI(string memory newURI) public onlyOwner {
+        baseURL = newURI;
+    }
 
     function safeMint(address to) public onlyOwner {
         _safeMint(to, _tokenIdCounter.current());

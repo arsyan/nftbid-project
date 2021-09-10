@@ -147,6 +147,18 @@ contract('AuctionHouse', accounts => {
     assert((await auctionHouse.currentAuctionId()).toNumber() === 1, 'Auction Id not updated');
   })
 
+  it('Should add another nft and cancel the auction', async () => {
+    await testNFTToken.approve(auctionHouse.address, 4, { from: accounts[1] });
+    await auctionHouse.addNFT(testNFTToken.address, 4, web3.utils.toWei('0.2'), { from: accounts[1] });
+    await auctionHouse.cancelAuction(2, { from: accounts[1] });
+    const ownerOfToken = await testNFTToken.ownerOf(4);
+    assert(ownerOfToken === accounts[1], 'Nft not transfered back once the auction is cancelled');
+    const _auction = await auctionHouse.auctions(2);
+    assert(_auction.cancelled, 'Auction not marked cancelled');
+    await testNFTToken.approve(auctionHouse.address, 4, { from: accounts[1] });
+    await auctionHouse.addNFT(testNFTToken.address, 4, web3.utils.toWei('0.2'), { from: accounts[1] });
+  })
+
   it('Should settle the auction if the time is over and if no one bidded refund the nft', async () => {
     await timeManager.advanceTimeAndBlock(3600);
     await auctionHouse.settleAuction({ from: accounts[8] });
@@ -154,7 +166,10 @@ contract('AuctionHouse', accounts => {
     assert(_auction.settled, 'Auction not marked settled yet');
     assert(await testNFTToken.ownerOf(1) === accounts[1], 'NFT not transfered');
     const _nextAuction = await auctionHouse.auctions(2);
-    assert(_nextAuction.startTime.toNumber() == 0, 'Next Auction not available but still start time updated');
-    assert((await auctionHouse.currentAuctionId()).toNumber() === 2, 'Auction Id not updated');
+    assert(_nextAuction.startTime.toNumber() == 0, 'Next Auction is cancelled but still start time updated');
+    assert((await auctionHouse.currentAuctionId()).toNumber() === 3, 'Auction Id not updated');
+    // should start auction id 3
+    const _thirdAuction = await auctionHouse.auctions(3);
+    assert(_thirdAuction.startTime.toNumber() != 0, 'Next Auction is not started');
   })
-});
+})

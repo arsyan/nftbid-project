@@ -25,6 +25,7 @@ contract AuctionHouse is Ownable {
         address currentBidder;
         uint256 currentBid;
         uint256 reservePrice;
+        bool cancelled;
     }
 
     mapping(uint256 => Auction) public auctions;
@@ -43,6 +44,14 @@ contract AuctionHouse is Ownable {
 
     event AccountApproved(address account);
     event AccountRemoved(address account);
+    event AuctionAdded(
+        uint256 auctionId,
+        address owner,
+        address contractAddress,
+        uint256 tokenId,
+        uint256 reservePrice
+    );
+    event AuctionStarted(uint256 auctionId, uint256 startTime, uint256 endTime);
     event AuctionMinBidIncrementPercentageUpdated(
         uint256 _minBidIncrementPercentage
     );
@@ -55,6 +64,7 @@ contract AuctionHouse is Ownable {
     );
     event AuctionExtended(uint256 auctionId, uint256 endTime);
     event AuctionSettled(uint256 auctionId, address bidder, uint256 value);
+    event AuctionCancelled(uint256 auctionId);
 
     modifier onlyApprovedAccount() {
         require(_approvedAccounts[msg.sender], "You Are Not Approved");
@@ -125,7 +135,15 @@ contract AuctionHouse is Ownable {
             false, // settled
             address(0), // current bidder
             0, // current bid
-            reservePrice // reserve price
+            reservePrice, // reserve price
+            false
+        );
+        emit AuctionAdded(
+            _auctionIdCounter.current(),
+            msg.sender,
+            contractAddress,
+            tokenId,
+            reservePrice
         );
         //TODO Check if no auction is live and then activate this
         if (_auctionIdCounter.current() == currentAuctionId) {
@@ -207,13 +225,48 @@ contract AuctionHouse is Ownable {
 
         currentAuctionId += 1;
 
+        // check for cancelled auctions and pass them
+        while (auctions[currentAuctionId].cancelled) {
+            currentAuctionId += 1;
+        }
+
+        // check if auction exist and if exist start it
         if (auctions[currentAuctionId].owner != address(0)) {
             _startAuction();
         }
     }
 
+    function cancelAuction(uint256 _auctionId) public {
+        Auction memory _auction = auctions[_auctionId];
+        require(_auction.owner != address(0), "Invalid auction id");
+        require(
+            msg.sender == owner() || msg.sender == _auction.owner,
+            "You are not authorized"
+        );
+        require(
+            _auction.startTime == 0,
+            "You are too late to cancel to this auction"
+        );
+        require(!_auction.cancelled, "Auction Already Cancelled");
+
+        // Transfer nft to Original Owner
+        IERC721 tokenContract = IERC721(_auction.contractAddress);
+        tokenContract.transferFrom(
+            address(this),
+            _auction.owner,
+            _auction.tokenId
+        );
+
+        auctions[_auctionId].cancelled = true;
+
+        emit AuctionCancelled(_auctionId);
+    }
+
     function _startAuction() internal {
-        auctions[currentAuctionId].startTime = block.timestamp;
-        auctions[currentAuctionId].endTime = block.timestamp + duration;
+        uint256 startTime = block.timestamp;
+        uint256 endTime = startTime + duration;
+        auctions[currentAuctionId].startTime = startTime;
+        auctions[currentAuctionId].endTime = endTime;
+        emit AuctionStarted(currentAuctionId, startTime, endTime);
     }
 }
