@@ -93,7 +93,7 @@ class App extends Component {
     if (networkId == '1') {
       const { data } = await axios.get(`https://api.opensea.io/api/v1/asset/${contractAddress}/${tokenId}`)
       nft = data;
-    } else if (networkId == '3') {
+    } else if (networkId == '4') {
       const { data } = await axios.get(`https://rinkeby-api.opensea.io/api/v1/asset/${contractAddress}/${tokenId}`)
       nft = data;
     } else {
