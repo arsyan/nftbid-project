@@ -75,6 +75,7 @@ class App extends Component {
         let newLastBids = [{ address: bidder, amount: value }].concat(lastBids);
         auction.currentBidder = bidder;
         auction.currentBid = value;
+        console.log(newLastBids)
         this.setState({ auction, lastBids: newLastBids });
       });
       const minBidIncrementPercentage = parseInt(await auctionContract.methods.minBidIncrementPercentage().call());
