@@ -73,7 +73,10 @@ class App extends Component {
       });
       auctionContract.events.AuctionBid({}).on('data', async ({ returnValues: { auctionId, bidder, value }, transactionHash }) => {
         const { auction, lastBids, events } = this.state;
+        console.log(events)
+        console.log(transactionHash);
         if (events.includes(transactionHash)) return;
+        console.log("Hello");
         let updatedEvents = [transactionHash].concat(events);
         let newLastBids = [{ address: bidder, amount: value }].concat(lastBids);
         auction.currentBidder = bidder;
